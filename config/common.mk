@@ -3,6 +3,10 @@ PRODUCT_BRAND ?= cyanogenmod
 SUPERUSER_EMBEDDED := true
 SUPERUSER_PACKAGE_PREFIX := com.android.settings.cyanogenmod.superuser
 
+# Boot animation
+PRODUCT_COPY_FILES += \
+    vendor/cm/prebuilt/common/bootanimation.zip:system/media/bootanimation.zip
+
 # CM
 ifdef CM_NIGHTLY
 PRODUCT_PROPERTY_OVERRIDES += \
