@@ -5,7 +5,7 @@ SUPERUSER_PACKAGE_PREFIX := com.android.settings.cyanogenmod.superuser
 
 # Boot animation
 PRODUCT_COPY_FILES += \
-    vendor/cm/prebuilt/common/bootanimation.zip:system/media/bootanimation.zip
+    vendor/cm/prebuilt/common/bootanimation/bootanimation.zip:system/media/bootanimation.zip
 
 # CM
 ifdef CM_NIGHTLY
