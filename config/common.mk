@@ -3,11 +3,35 @@ PRODUCT_BRAND ?= cyanogenmod
 SUPERUSER_EMBEDDED := true
 SUPERUSER_PACKAGE_PREFIX := com.android.settings.cyanogenmod.superuser
 
-# Boot animation
-PRODUCT_COPY_FILES += \
-    vendor/cm/prebuilt/common/bootanimation/bootanimation.zip:system/media/bootanimation.zip
+ifneq ($(TARGET_SCREEN_WIDTH) $(TARGET_SCREEN_HEIGHT),$(space))
+# determine the smaller dimension
+TARGET_BOOTANIMATION_SIZE := $(shell \
+  if [ $(TARGET_SCREEN_WIDTH) -lt $(TARGET_SCREEN_HEIGHT) ]; then \
+    echo $(TARGET_SCREEN_WIDTH); \
+  else \
+    echo $(TARGET_SCREEN_HEIGHT); \
+  fi )
 
-# CM
+# get a sorted list of the sizes
+bootanimation_sizes := $(subst .zip,, $(shell ls vendor/cm/prebuilt/common/bootanimation))
+bootanimation_sizes := $(shell echo -e $(subst $(space),'\n',$(bootanimation_sizes)) | sort -rn)
+
+# find the appropriate size and set
+define check_and_set_bootanimation
+$(eval TARGET_BOOTANIMATION_NAME := $(shell \
+  if [ -z "$(TARGET_BOOTANIMATION_NAME)" ]; then
+    if [ $(1) -le $(TARGET_BOOTANIMATION_SIZE) ]; then \
+      echo $(1); \
+      exit 0; \
+    fi;
+  fi;
+  echo $(TARGET_BOOTANIMATION_NAME); ))
+endef
+$(foreach size,$(bootanimation_sizes), $(call check_and_set_bootanimation,$(size)))
+
+PRODUCT_BOOTANIMATION := vendor/cm/prebuilt/common/bootanimation/$(TARGET_BOOTANIMATION_NAME).zip
+endif
+
 ifdef CM_NIGHTLY
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.rommanager.developerid=cyanogenmodnightly
@@ -124,6 +148,8 @@ PRODUCT_PACKAGES += \
     Apollo \
     CMFileManager \
     LockClock \
+    CMUpdater \
+    CMFota \
     CMAccount
 
 # CM Hardware Abstraction Framework
@@ -177,7 +203,6 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
 PRODUCT_PACKAGES += \
     procmem \
     procrank \
-    CMUpdater \
     Superuser \
     su
 
@@ -189,9 +214,6 @@ PRODUCT_COPY_FILES +=  \
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.root_access=1
 else
-
-PRODUCT_PACKAGES += \
-    CMFota
 
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.root_access=0
@@ -251,7 +273,15 @@ else
 endif
 
 ifeq ($(CM_BUILDTYPE), RELEASE)
-    CM_VERSION := $(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)$(PRODUCT_VERSION_DEVICE_SPECIFIC)-$(CM_BUILD)
+    ifndef TARGET_VENDOR_RELEASE_BUILD_ID
+        CM_VERSION := $(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)$(PRODUCT_VERSION_DEVICE_SPECIFIC)-$(CM_BUILD)
+    else
+        ifeq ($(TARGET_BUILD_VARIANT),user)
+            CM_VERSION := $(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR)-$(TARGET_VENDOR_RELEASE_BUILD_ID)-$(CM_BUILD)
+        else
+            CM_VERSION := $(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)$(PRODUCT_VERSION_DEVICE_SPECIFIC)-$(CM_BUILD)
+        endif
+    endif
 else
     ifeq ($(PRODUCT_VERSION_MINOR),0)
         CM_VERSION := $(PRODUCT_VERSION_MAJOR)-$(shell date -u +%Y%m%d)-$(CM_BUILDTYPE)$(CM_EXTRAVERSION)-$(CM_BUILD)
@@ -267,3 +297,5 @@ PRODUCT_PROPERTY_OVERRIDES += \
 -include vendor/cm-priv/keys/keys.mk
 
 -include $(WORKSPACE)/hudson/image-auto-bits.mk
+
+-include vendor/cyngn/product.mk
