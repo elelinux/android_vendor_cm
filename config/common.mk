@@ -124,7 +124,8 @@ PRODUCT_PACKAGES += \
     Apollo \
     CMFileManager \
     LockClock \
-    CMAccount
+    CMAccount \
+    WhisperPush
 
 # CM Updaters
 ifneq ($(DISABLE_OTA),true)
