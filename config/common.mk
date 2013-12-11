@@ -223,15 +223,15 @@ ifndef CM_BUILDTYPE
 endif
 
 # Filter out random types, so it'll reset to UNOFFICIAL
-ifeq ($(filter RELEASE NIGHTLY SNAPSHOT EXPERIMENTAL,$(CM_BUILDTYPE)),)
+ifeq ($(filter RELEASE NIGHTLY SNAPSHOT PRIVATE,$(CM_BUILDTYPE)),)
     CM_BUILDTYPE :=
 endif
 
 ifdef CM_BUILDTYPE
     ifneq ($(CM_BUILDTYPE), SNAPSHOT)
         ifdef CM_EXTRAVERSION
-            # Force build type to EXPERIMENTAL
-            CM_BUILDTYPE := EXPERIMENTAL
+            # Force build type to PRIVATE
+            CM_BUILDTYPE := PRIVATE
             # Remove leading dash from CM_EXTRAVERSION
             CM_EXTRAVERSION := $(shell echo $(CM_EXTRAVERSION) | sed 's/-//')
             # Add leading dash to CM_EXTRAVERSION
@@ -239,8 +239,8 @@ ifdef CM_BUILDTYPE
         endif
     else
         ifndef CM_EXTRAVERSION
-            # Force build type to EXPERIMENTAL, SNAPSHOT mandates a tag
-            CM_BUILDTYPE := EXPERIMENTAL
+            # Force build type to PRIVATE, SNAPSHOT mandates a tag
+            CM_BUILDTYPE := PRIVATE
         else
             # Remove leading dash from CM_EXTRAVERSION
             CM_EXTRAVERSION := $(shell echo $(CM_EXTRAVERSION) | sed 's/-//')
