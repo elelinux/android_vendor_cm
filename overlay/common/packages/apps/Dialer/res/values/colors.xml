@@ -45,6 +45,7 @@
 
     <!-- Background color where keypad digits are displayed -->
     <color name="background_digits_dialpad">#ffffff</color>
+    <color name="transparent">#00000000</color>
 
     <!-- Background color of new dialpad -->
     <color name="background_dialpad">#eeeeee</color>
