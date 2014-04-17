@@ -3,11 +3,39 @@ PRODUCT_BRAND ?= cyanogenmod
 SUPERUSER_EMBEDDED := true
 SUPERUSER_PACKAGE_PREFIX := com.android.settings.cyanogenmod.superuser
 
-# Boot animation
-PRODUCT_COPY_FILES += \
-    vendor/cm/prebuilt/common/bootanimation/bootanimation.zip:system/media/bootanimation.zip
+ifneq ($(TARGET_SCREEN_WIDTH) $(TARGET_SCREEN_HEIGHT),$(space))
+# determine the smaller dimension
+TARGET_BOOTANIMATION_SIZE := $(shell \
+  if [ $(TARGET_SCREEN_WIDTH) -lt $(TARGET_SCREEN_HEIGHT) ]; then \
+    echo $(TARGET_SCREEN_WIDTH); \
+  else \
+    echo $(TARGET_SCREEN_HEIGHT); \
+  fi )
 
-# CM
+# get a sorted list of the sizes
+bootanimation_sizes := $(subst .zip,, $(shell ls vendor/cm/prebuilt/common/bootanimation))
+bootanimation_sizes := $(shell echo -e $(subst $(space),'\n',$(bootanimation_sizes)) | sort -rn)
+
+# find the appropriate size and set
+define check_and_set_bootanimation
+$(eval TARGET_BOOTANIMATION_NAME := $(shell \
+  if [ -z "$(TARGET_BOOTANIMATION_NAME)" ]; then
+    if [ $(1) -le $(TARGET_BOOTANIMATION_SIZE) ]; then \
+      echo $(1); \
+      exit 0; \
+    fi;
+  fi;
+  echo $(TARGET_BOOTANIMATION_NAME); ))
+endef
+$(foreach size,$(bootanimation_sizes), $(call check_and_set_bootanimation,$(size)))
+
+ifeq ($(TARGET_BOOTANIMATION_HALF_RES),true)
+PRODUCT_BOOTANIMATION := vendor/cm/prebuilt/common/bootanimation/halfres/$(TARGET_BOOTANIMATION_NAME).zip
+else
+PRODUCT_BOOTANIMATION := vendor/cm/prebuilt/common/bootanimation/$(TARGET_BOOTANIMATION_NAME).zip
+endif
+endif
+
 ifdef CM_NIGHTLY
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.rommanager.developerid=cyanogenmodnightly
@@ -38,6 +66,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.build.selinux=1
 
+# Thank you, please drive thru!
+PRODUCT_PROPERTY_OVERRIDES += persist.sys.dun.override=0
+
 ifneq ($(TARGET_BUILD_VARIANT),eng)
 # Enable ADB authentication
 ADDITIONAL_DEFAULT_PROPERTIES += ro.adb.secure=1
@@ -64,10 +95,6 @@ PRODUCT_COPY_FILES += \
 # userinit support
 PRODUCT_COPY_FILES += \
     vendor/cm/prebuilt/common/etc/init.d/90userinit:system/etc/init.d/90userinit
-
-# SELinux filesystem labels
-PRODUCT_COPY_FILES += \
-    vendor/cm/prebuilt/common/etc/init.d/50selinuxrelabel:system/etc/init.d/50selinuxrelabel
 
 # CM-specific init file
 PRODUCT_COPY_FILES += \
@@ -102,16 +129,13 @@ PRODUCT_PACKAGES += \
 # Optional CM packages
 PRODUCT_PACKAGES += \
     VoicePlus \
-    VoiceDialer \
-    SoundRecorder \
     Basic \
     libemoji
 
 # Custom CM packages
-    #Trebuchet \
-
 PRODUCT_PACKAGES += \
     Launcher3 \
+    Trebuchet \
     DSPManager \
     libcyanogen-dsp \
     audio_effects.conf \
@@ -119,10 +143,9 @@ PRODUCT_PACKAGES += \
     Apollo \
     CMFileManager \
     LockClock \
-    CMAccount \
-    WhisperPush \
-    EL.KK \
-    HTC.Sense5
+    CMUpdater \
+    CMFota \
+    CMAccount
 
 # CM Updaters
 ifneq ($(DISABLE_OTA),true)
@@ -136,17 +159,14 @@ PRODUCT_PACKAGES += \
     org.cyanogenmod.hardware \
     org.cyanogenmod.hardware.xml
 
-PRODUCT_PACKAGES += \
-    CellBroadcastReceiver
-
 # Extra tools in CM
 PRODUCT_PACKAGES += \
+    libsepol \
     openvpn \
     e2fsck \
     mke2fs \
     tune2fs \
     bash \
-    vim \
     nano \
     htop \
     powertop \
