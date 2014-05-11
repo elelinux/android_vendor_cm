@@ -130,7 +130,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     VoicePlus \
     Basic \
-    libemoji
+    libemoji \
+    Screencast
 
 # Custom CM packages
 PRODUCT_PACKAGES += \
@@ -146,13 +147,6 @@ PRODUCT_PACKAGES += \
     CMUpdater \
     CMFota \
     CMAccount
-
-# CM Updaters
-ifneq ($(DISABLE_OTA),true)
-PRODUCT_PACKAGES += \
-    CMUpdater \
-    CMFota
-endif
 
 # CM Hardware Abstraction Framework
 PRODUCT_PACKAGES += \
@@ -205,6 +199,13 @@ PRODUCT_PACKAGES += \
     Superuser \
     su
 
+# CM Updaters
+ifneq ($(DISABLE_OTA),true)
+PRODUCT_PACKAGES += \
+    CMUpdater \
+    CMFota
+endif
+
 # Terminal Emulator
 PRODUCT_COPY_FILES +=  \
     vendor/cm/proprietary/Term.apk:system/app/Term.apk \
@@ -222,7 +223,6 @@ endif
 # easy way to extend to add more packages
 -include vendor/extra/product.mk
 
-PRODUCT_PACKAGE_OVERLAYS += vendor/cm/overlay/dictionaries
 PRODUCT_PACKAGE_OVERLAYS += vendor/cm/overlay/common
 
 PRODUCT_VERSION_MAJOR = 11
@@ -273,7 +273,7 @@ endif
 
 ifeq ($(CM_BUILDTYPE), UNOFFICIAL)
     ifneq ($(TARGET_UNOFFICIAL_BUILD_ID),)
-        CM_EXTRAVERSION := "-$(TARGET_UNOFFICIAL_BUILD_ID)"
+        CM_EXTRAVERSION := -$(TARGET_UNOFFICIAL_BUILD_ID)
     endif
 endif
 
@@ -304,19 +304,21 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 CM_DISPLAY_VERSION := $(CM_VERSION)
 
-ifneq ($(DEFAULT_SYSTEM_DEV_CERTIFICATE),)
-ifneq ($(DEFAULT_SYSTEM_DEV_CERTIFICATE),build/target/product/security/testkey)
+ifneq ($(PRODUCT_DEFAULT_DEV_CERTIFICATE),)
+ifneq ($(PRODUCT_DEFAULT_DEV_CERTIFICATE),build/target/product/security/testkey)
   ifneq ($(CM_BUILDTYPE), UNOFFICIAL)
     ifndef TARGET_VENDOR_RELEASE_BUILD_ID
       ifneq ($(CM_EXTRAVERSION),)
+        # Remove leading dash from CM_EXTRAVERSION
+        CM_EXTRAVERSION := $(shell echo $(CM_EXTRAVERSION) | sed 's/-//')
         TARGET_VENDOR_RELEASE_BUILD_ID := $(CM_EXTRAVERSION)
       else
-        TARGET_VENDOR_RELEASE_BUILD_ID := -$(shell date -u +%Y%m%d)
+        TARGET_VENDOR_RELEASE_BUILD_ID := $(shell date -u +%Y%m%d)
       endif
     else
-      TARGET_VENDOR_RELEASE_BUILD_ID := -$(TARGET_VENDOR_RELEASE_BUILD_ID)
+      TARGET_VENDOR_RELEASE_BUILD_ID := $(TARGET_VENDOR_RELEASE_BUILD_ID)
     endif
-    CM_DISPLAY_VERSION=$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR)$(TARGET_VENDOR_RELEASE_BUILD_ID)
+    CM_DISPLAY_VERSION=$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR)-$(TARGET_VENDOR_RELEASE_BUILD_ID)
   endif
 endif
 endif
@@ -324,6 +326,6 @@ endif
 PRODUCT_PROPERTY_OVERRIDES += \
   ro.cm.display.version=$(CM_DISPLAY_VERSION)
 
--include $(WORKSPACE)/hudson/image-auto-bits.mk
+-include $(WORKSPACE)/build_env/image-auto-bits.mk
 
 -include vendor/cyngn/product.mk
