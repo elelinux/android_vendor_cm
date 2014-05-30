@@ -130,8 +130,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     VoicePlus \
     Basic \
-    libemoji \
-    Screencast
+    libemoji
 
 # Custom CM packages
 PRODUCT_PACKAGES += \
@@ -144,9 +143,14 @@ PRODUCT_PACKAGES += \
     Apollo \
     CMFileManager \
     LockClock \
-    CMUpdater \
-    CMFota \
     CMAccount
+
+# CM Updaters
+ifneq ($(DISABLE_OTA),true)
+PRODUCT_PACKAGES += \
+    CMUpdater \
+    CMFota
+endif
 
 # CM Hardware Abstraction Framework
 PRODUCT_PACKAGES += \
@@ -198,13 +202,6 @@ PRODUCT_PACKAGES += \
     procrank \
     Superuser \
     su
-
-# CM Updaters
-ifneq ($(DISABLE_OTA),true)
-PRODUCT_PACKAGES += \
-    CMUpdater \
-    CMFota
-endif
 
 # Terminal Emulator
 PRODUCT_COPY_FILES +=  \
@@ -322,6 +319,9 @@ ifneq ($(PRODUCT_DEFAULT_DEV_CERTIFICATE),build/target/product/security/testkey)
   endif
 endif
 endif
+
+# by default, do not update the recovery with system updates
+PRODUCT_PROPERTY_OVERRIDES += persist.sys.recovery_update=false
 
 PRODUCT_PROPERTY_OVERRIDES += \
   ro.cm.display.version=$(CM_DISPLAY_VERSION)
